@@ -37,7 +37,7 @@ export async function recognizeIngredientsWithGeminiImpl(input: {
   const mimeType = matches[1];
   const base64Data = matches[2];
 
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+  const model = genAI.getGenerativeModel({ model: "gemini-3.1-flash-lite" });
 
   const prompt = [
     "Analyze the image for visible food, ingredients, beverages, and obvious seasonings only.",
@@ -75,7 +75,7 @@ export async function generateRecipesWithGeminiImpl(input: {
   const genAI = getGeminiClient();
   if (!genAI) return { ok: false as const, reason: "missing_key" as const };
 
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
   const ingredientText = input.ingredients
     .map(i => `${i.displayNameEn} (${i.normalizedName}) - ${i.estimatedAmount}`)
