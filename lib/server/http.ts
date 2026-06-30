@@ -92,6 +92,20 @@ function isAiModelError(error: unknown) {
   return errorStatus(error) === 404 && message.includes("model");
 }
 
+function isAiServiceUnavailableError(error: unknown) {
+  const message = errorMessage(error);
+  return (
+    errorStatus(error) === 503 ||
+    message.includes("service unavailable") ||
+    message.includes("high demand")
+  );
+}
+
+function isAiResponseFormatError(error: unknown) {
+  const message = errorMessage(error);
+  return message.includes("ai returned") && message.includes("unexpected format");
+}
+
 export function handleRouteError(error: unknown, locale: AppLocale) {
   if (error instanceof ZodError) {
     return jsonError(error.issues.map((issue) => issue.message).join(", "), 400);
@@ -132,6 +146,26 @@ export function handleRouteError(error: unknown, locale: AppLocale) {
         ? "当前 AI 模型不可用。请设置 GEMINI_MODEL 为可用模型，或更新 API key 所属项目。"
         : "The selected AI model is not available. Set GEMINI_MODEL to an available model or update the API key project.",
       503
+    );
+  }
+
+  if (isAiServiceUnavailableError(error)) {
+    console.error(error);
+    return jsonError(
+      locale === "zh-CN"
+        ? "AI 服务当前繁忙，请稍后再试，或换一个 GEMINI_MODEL。"
+        : "The AI service is currently busy. Try again later or use a different GEMINI_MODEL.",
+      503
+    );
+  }
+
+  if (isAiResponseFormatError(error)) {
+    console.error(error);
+    return jsonError(
+      locale === "zh-CN"
+        ? "AI 返回的内容格式不正确。请再试一次，或换一个 GEMINI_MODEL。"
+        : "The AI returned an unexpected response format. Try again or use a different GEMINI_MODEL.",
+      502
     );
   }
 

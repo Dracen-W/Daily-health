@@ -12,7 +12,14 @@ import {
   recognitionResultSchema
 } from "@/lib/validation/schemas";
 
-const DEFAULT_GEMINI_MODELS = ["gemini-2.5-flash", "gemini-2.0-flash"];
+const DEFAULT_GEMINI_MODELS = [
+  "gemini-flash-lite-latest",
+  "gemini-flash-latest",
+  "gemini-2.5-flash-lite",
+  "gemini-2.5-flash",
+  "gemini-2.0-flash-lite",
+  "gemini-2.0-flash"
+];
 
 function getGeminiClient() {
   if (!process.env.GEMINI_API_KEY) return null;
@@ -34,7 +41,7 @@ function isGeminiFallbackError(error: unknown) {
     typeof error === "object" && error !== null && "status" in error
       ? (error as { status?: unknown }).status
       : undefined;
-  if (status === 404 || status === 429) {
+  if (status === 404 || status === 429 || status === 503) {
     return true;
   }
 
@@ -43,7 +50,9 @@ function isGeminiFallbackError(error: unknown) {
     (message.includes("model") && message.includes("not found")) ||
     message.includes("quota") ||
     message.includes("too many requests") ||
-    message.includes("rate limit")
+    message.includes("rate limit") ||
+    message.includes("service unavailable") ||
+    message.includes("high demand")
   );
 }
 
@@ -54,7 +63,13 @@ async function runWithGeminiModel<T>(
   let modelError: unknown;
 
   for (const modelName of getGeminiModelNames()) {
-    const model = genAI.getGenerativeModel({ model: modelName });
+    const model = genAI.getGenerativeModel({
+      model: modelName,
+      generationConfig: {
+        responseMimeType: "application/json",
+        temperature: 0.2
+      }
+    });
     try {
       return await run(model);
     } catch (error) {
@@ -75,6 +90,14 @@ function parseJsonFromText(text: string): unknown {
     .replace(/```$/i, "")
     .trim();
   return JSON.parse(withoutFence);
+}
+
+function parseGeminiJson<T>(text: string, parse: (value: unknown) => T, label: string) {
+  try {
+    return parse(parseJsonFromText(text));
+  } catch (error) {
+    throw new Error(`AI returned ${label} JSON in an unexpected format.`, { cause: error });
+  }
 }
 
 export async function recognizeIngredientsWithGeminiImpl(input: {
@@ -99,6 +122,7 @@ export async function recognizeIngredientsWithGeminiImpl(input: {
     "Return valid JSON only with this shape:",
     `{ "overallConfidence": "high" | "medium" | "low", "uncertaintyNoteEn": "string", "uncertaintyNoteZh": "string", "ingredients": [{ "normalizedName": "...", "displayNameEn": "...", "displayNameZh": "...", "estimatedAmount": "...", "confidence": "high|medium|low", "notes": "..." }] }`,
     `Prefer ${input.locale === "zh-CN" ? "Simplified Chinese" : "English"} phrasing where notes are language-specific.`,
+    "Return JSON only. Do not use markdown fences or explanatory text."
   ].join("\n");
 
   const result = await runWithGeminiModel(genAI, (model) =>
@@ -114,7 +138,7 @@ export async function recognizeIngredientsWithGeminiImpl(input: {
   const text = response.text();
   if (!text) throw new Error("Gemini returned empty recognition response");
 
-  const parsed = recognitionResultSchema.parse(parseJsonFromText(text));
+  const parsed = parseGeminiJson(text, (value) => recognitionResultSchema.parse(value), "ingredient recognition");
   return { ok: true as const, result: parsed };
 }
 
@@ -141,8 +165,11 @@ export async function generateRecipesWithGeminiImpl(input: {
     "Prefer the provided recognized ingredients and use the flavor pairing suggestions when useful.",
     "Clearly mark optional missing ingredients.",
     "Avoid unsafe cooking instructions, medical claims, diet-treatment advice, and allergy assumptions.",
-    "Return both English and Simplified Chinese content whenever possible.",
-    "Use structured JSON only with a top-level recipes array of exactly 3 items.",
+    "Return both English and Simplified Chinese content.",
+    "Return JSON only. Do not use markdown fences or explanatory text.",
+    "Every array field must be an actual JSON array, never an object or string.",
+    "Every boolean field must be true or false, never quoted.",
+    "Every numeric field must be a number, never quoted.",
     "",
     "Visible or user-confirmed ingredients:",
     ingredientText || "No ingredients provided.",
@@ -153,8 +180,65 @@ export async function generateRecipesWithGeminiImpl(input: {
     "Preferences:",
     JSON.stringify(input.preferences),
     "",
-    "Schema summary:",
-    "recipes[].cuisineStyle, difficulty easy|medium, estimatedCookingMinutes, servings, estimatedCaloriesPerServing, translations[en and zh-CN], ingredients, steps, tips, missingIngredients.",
+    "Required JSON shape:",
+    JSON.stringify({
+      recipes: [
+        {
+          cuisineStyle: "home cooking",
+          difficulty: "easy",
+          estimatedCookingMinutes: 20,
+          servings: 2,
+          estimatedCaloriesPerServing: 350,
+          translations: [
+            {
+              locale: "en",
+              title: "Recipe title",
+              shortDescription: "One short sentence.",
+              nutritionDisclaimer: "Estimated nutrition is for everyday reference only."
+            },
+            {
+              locale: "zh-CN",
+              title: "菜谱标题",
+              shortDescription: "一句简短描述。",
+              nutritionDisclaimer: "营养估算仅供日常参考。"
+            }
+          ],
+          ingredients: [
+            {
+              normalizedName: "egg",
+              nameEn: "egg",
+              nameZh: "鸡蛋",
+              amount: "2 pieces",
+              isRecognizedIngredient: true,
+              isOptional: false
+            }
+          ],
+          steps: [
+            {
+              stepNumber: 1,
+              estimatedMinutes: 5,
+              instructionEn: "Cook the ingredients safely.",
+              instructionZh: "安全地烹饪食材。"
+            }
+          ],
+          tips: [
+            {
+              contentEn: "Taste and adjust seasoning.",
+              contentZh: "试味后调整调味。"
+            }
+          ],
+          missingIngredients: [
+            {
+              normalizedName: "salt",
+              nameEn: "salt",
+              nameZh: "盐",
+              isOptional: true
+            }
+          ]
+        }
+      ]
+    }),
+    "The recipes array must contain exactly 3 recipe objects matching this shape.",
     `The user is currently viewing the app in ${input.locale}.`,
   ].join("\n");
 
@@ -163,7 +247,7 @@ export async function generateRecipesWithGeminiImpl(input: {
   const text = response.text();
   if (!text) throw new Error("Gemini returned empty recipe response");
 
-  const parsed = generatedRecipesSchema.parse(parseJsonFromText(text));
+  const parsed = parseGeminiJson(text, (value) => generatedRecipesSchema.parse(value), "recipe");
   return {
     ok: true as const,
     recipes: parsed.recipes as GeneratedRecipeInput[],
