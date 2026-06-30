@@ -119,6 +119,26 @@ npm run mobile:sync
 npm run mobile:apk
 ```
 
+## GitHub APK Releases
+
+The repository includes a manual GitHub Actions workflow named `Android APK Release`.
+
+- It can only run from `workflow_dispatch`.
+- The build job exits unless the trigger actor is the repository owner.
+- It publishes a GitHub Release containing a debug APK, release APK, source code ZIP, and SHA256 checksums.
+- If Android signing secrets are not configured, the workflow generates a temporary CI keystore so the release APK is still installable.
+
+For stable production signing, add these repository secrets before running the workflow:
+
+```text
+ANDROID_KEYSTORE_BASE64
+ANDROID_KEYSTORE_PASSWORD
+ANDROID_KEY_ALIAS
+ANDROID_KEY_PASSWORD
+```
+
+`ANDROID_KEY_PASSWORD` is optional when it matches `ANDROID_KEYSTORE_PASSWORD`.
+
 ## Data Storage and Privacy
 
 Important health, recipe, recognition, and history data is stored in local SQLite through Prisma. Browser LocalStorage stores only lightweight device-specific values: the anonymous profile ID, selected locale, and selected theme. API keys and database URLs are server-side only and are never sent to client components.
