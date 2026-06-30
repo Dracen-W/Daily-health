@@ -41,7 +41,25 @@ export async function apiFetch<T>(path: string, options: ApiOptions = {}): Promi
     throw new Error("Unable to reach the Daily Health server. Please make sure it is running and refresh the page.");
   }
 
-  const data = (await response.json()) as unknown;
+  const contentType = response.headers.get("content-type")?.toLowerCase() ?? "";
+  const responseText = await response.text();
+  const looksLikeJson = contentType.includes("application/json") || contentType.includes("+json");
+
+  if (!looksLikeJson) {
+    const returnedHtml = responseText.trimStart().startsWith("<");
+    const message = returnedHtml
+      ? "The server returned an HTML page instead of JSON. In the APK, make sure the server URL points to a running Daily Health backend, not a GitHub page or static website."
+      : "The server returned a non-JSON response. Please check the Daily Health server URL and logs.";
+    throw new Error(message);
+  }
+
+  let data: unknown;
+  try {
+    data = responseText ? JSON.parse(responseText) : null;
+  } catch {
+    throw new Error("The Daily Health server returned invalid JSON. Please check the server logs.");
+  }
+
   if (!response.ok) {
     const message =
       typeof data === "object" &&

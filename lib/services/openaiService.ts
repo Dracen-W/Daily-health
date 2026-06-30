@@ -1,7 +1,6 @@
 import type {
   AppLocale,
   EpicurePairingInput,
-  GeneratedRecipeInput,
   RecognizedIngredientInput,
   RecipePreferenceInput
 } from "@/lib/types/domain";

@@ -71,6 +71,15 @@
         font-size: 13px;
       }
 
+      .warning {
+        border: 1px solid rgba(182, 89, 115, 0.35);
+        border-radius: 6px;
+        background: rgba(182, 89, 115, 0.1);
+        padding: 10px 12px;
+        font-size: 13px;
+        font-weight: 700;
+      }
+
       .error {
         min-height: 20px;
         color: #b65973;
@@ -111,12 +120,15 @@
       <form id="server-form">
         <label>
           Server URL / 服务地址
-          <input id="server-url" type="url" placeholder="https://your-domain.com" autocomplete="url" required />
+          <input id="server-url" type="url" placeholder="http://192.168.1.20:3000" autocomplete="url" required />
         </label>
         <button type="submit">Open Daily Health / 打开应用</button>
         <p class="hint">
           For local testing, use the computer LAN address, for example http://192.168.1.20:3000.
           本地测试请使用电脑局域网地址，例如 http://192.168.1.20:3000。
+        </p>
+        <p class="warning">
+          Do not enter the GitHub repository URL. This must be a running Daily Health server with API routes.
         </p>
         <p id="error" class="error" aria-live="polite"></p>
       </form>
@@ -139,8 +151,9 @@
           if (url.protocol !== "http:" && url.protocol !== "https:") {
             throw new Error("Unsupported protocol.");
           }
-          localStorage.setItem(key, url.toString());
-          window.location.href = url.toString();
+          const serverOrigin = url.origin;
+          localStorage.setItem(key, serverOrigin);
+          window.location.href = serverOrigin;
         } catch {
           error.textContent = "Please enter a valid http or https URL. / 请输入有效的网址。";
         }

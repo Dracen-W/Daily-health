@@ -108,6 +108,7 @@ Important mobile behavior:
 - The APK is a mobile client for Daily Health.
 - Because the app uses Next.js API routes, Prisma/SQLite, OpenAI server-side keys, and optional Epicure MCP server-side calls, the phone app must connect to a running Daily Health server.
 - On first launch, the APK shows a server URL screen. Enter a reachable URL such as `http://192.168.1.20:3000` for same-Wi-Fi testing, or a production HTTPS URL after deployment.
+- Do not enter the GitHub repository URL in the APK. GitHub shows source code pages and does not run the app API routes.
 - To bake a fixed server URL into the native wrapper before syncing, run Capacitor with `MOBILE_SERVER_URL` set, then rebuild the APK.
 
 Example on Windows PowerShell:
