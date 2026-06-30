@@ -59,13 +59,16 @@ Create `.env.local` in the project root:
 
 ```env
 DATABASE_URL="file:./daily-health.db"
+AI_PROVIDER=
 OPENAI_API_KEY=
+GEMINI_API_KEY=
 EPICURE_MCP_URL=
 ```
 
 `DATABASE_URL="file:./daily-health.db"` creates `database/daily-health.db` because the Prisma schema is inside the `database` folder.
 
-Set `OPENAI_API_KEY` to enable Smart Scan and recipe generation. Without it, the app shows a friendly setup message instead of exposing technical details.
+Set `AI_PROVIDER` as `openai` OR `gemini` to select the ai provider.
+Set `OPENAI_API_KEY` OR `GEMINI_API_KEY` to enable Smart Scan and recipe generation. Without it, the app shows a friendly setup message instead of exposing technical details.
 
 Set `EPICURE_MCP_URL` only if you have an Epicure MCP service. It is optional.
 
