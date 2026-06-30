@@ -52,6 +52,46 @@ function isDatabaseConfigurationError(error: unknown) {
   );
 }
 
+function errorStatus(error: unknown) {
+  if (typeof error !== "object" || error === null || !("status" in error)) {
+    return undefined;
+  }
+
+  const status = (error as { status?: unknown }).status;
+  return typeof status === "number" ? status : undefined;
+}
+
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message.toLowerCase() : "";
+}
+
+function isAiQuotaError(error: unknown) {
+  const message = errorMessage(error);
+  return (
+    errorStatus(error) === 429 ||
+    message.includes("quota") ||
+    message.includes("too many requests") ||
+    message.includes("rate limit")
+  );
+}
+
+function isAiAuthError(error: unknown) {
+  const status = errorStatus(error);
+  const message = errorMessage(error);
+  return (
+    status === 401 ||
+    status === 403 ||
+    message.includes("api key not valid") ||
+    message.includes("permission denied") ||
+    message.includes("unauthorized")
+  );
+}
+
+function isAiModelError(error: unknown) {
+  const message = errorMessage(error);
+  return errorStatus(error) === 404 && message.includes("model");
+}
+
 export function handleRouteError(error: unknown, locale: AppLocale) {
   if (error instanceof ZodError) {
     return jsonError(error.issues.map((issue) => issue.message).join(", "), 400);
@@ -61,6 +101,36 @@ export function handleRouteError(error: unknown, locale: AppLocale) {
     console.error(error);
     return jsonError(
       "Database is not configured correctly. For this SQLite app, set DATABASE_URL to file:./daily-health.db and regenerate Prisma Client.",
+      503
+    );
+  }
+
+  if (isAiQuotaError(error)) {
+    console.error(error);
+    return jsonError(
+      locale === "zh-CN"
+        ? "AI 配额已用完，或这个 API key 所属项目没有可用额度。请检查 Gemini/OpenAI 的额度、账单，或换一个 API key。"
+        : "AI quota is exhausted, or this API key's project has no available quota. Check Gemini/OpenAI quota, billing, or use another API key.",
+      429
+    );
+  }
+
+  if (isAiAuthError(error)) {
+    console.error(error);
+    return jsonError(
+      locale === "zh-CN"
+        ? "AI API key 无效或没有权限。请重新生成 API key，并确认对应服务已经启用。"
+        : "The AI API key is invalid or does not have permission. Generate a new API key and confirm the service is enabled.",
+      401
+    );
+  }
+
+  if (isAiModelError(error)) {
+    console.error(error);
+    return jsonError(
+      locale === "zh-CN"
+        ? "当前 AI 模型不可用。请设置 GEMINI_MODEL 为可用模型，或更新 API key 所属项目。"
+        : "The selected AI model is not available. Set GEMINI_MODEL to an available model or update the API key project.",
       503
     );
   }

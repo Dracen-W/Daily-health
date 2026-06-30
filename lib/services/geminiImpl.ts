@@ -1,4 +1,5 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import type { GenerativeModel } from "@google/generative-ai";
 import type {
   AppLocale,
   GeneratedRecipeInput,
@@ -11,9 +12,60 @@ import {
   recognitionResultSchema
 } from "@/lib/validation/schemas";
 
+const DEFAULT_GEMINI_MODELS = ["gemini-2.5-flash", "gemini-2.0-flash"];
+
 function getGeminiClient() {
   if (!process.env.GEMINI_API_KEY) return null;
   return new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+}
+
+function getGeminiModelNames() {
+  const configuredModels =
+    process.env.GEMINI_MODEL
+      ?.split(",")
+      .map((model) => model.trim())
+      .filter(Boolean) ?? [];
+
+  return [...new Set([...configuredModels, ...DEFAULT_GEMINI_MODELS])];
+}
+
+function isGeminiFallbackError(error: unknown) {
+  const status =
+    typeof error === "object" && error !== null && "status" in error
+      ? (error as { status?: unknown }).status
+      : undefined;
+  if (status === 404 || status === 429) {
+    return true;
+  }
+
+  const message = error instanceof Error ? error.message.toLowerCase() : "";
+  return (
+    (message.includes("model") && message.includes("not found")) ||
+    message.includes("quota") ||
+    message.includes("too many requests") ||
+    message.includes("rate limit")
+  );
+}
+
+async function runWithGeminiModel<T>(
+  genAI: GoogleGenerativeAI,
+  run: (model: GenerativeModel) => Promise<T>
+) {
+  let modelError: unknown;
+
+  for (const modelName of getGeminiModelNames()) {
+    const model = genAI.getGenerativeModel({ model: modelName });
+    try {
+      return await run(model);
+    } catch (error) {
+      if (!isGeminiFallbackError(error)) {
+        throw error;
+      }
+      modelError = error;
+    }
+  }
+
+  throw modelError;
 }
 
 function parseJsonFromText(text: string): unknown {
@@ -37,8 +89,6 @@ export async function recognizeIngredientsWithGeminiImpl(input: {
   const mimeType = matches[1];
   const base64Data = matches[2];
 
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
   const prompt = [
     "Analyze the image for visible food, ingredients, beverages, and obvious seasonings only.",
     "Do not invent hidden ingredients. If no food is identifiable, return an empty ingredients array.",
@@ -51,12 +101,14 @@ export async function recognizeIngredientsWithGeminiImpl(input: {
     `Prefer ${input.locale === "zh-CN" ? "Simplified Chinese" : "English"} phrasing where notes are language-specific.`,
   ].join("\n");
 
-  const result = await model.generateContent([
-    { text: prompt },
-    {
-      inlineData: { mimeType, data: base64Data },
-    },
-  ]);
+  const result = await runWithGeminiModel(genAI, (model) =>
+    model.generateContent([
+      { text: prompt },
+      {
+        inlineData: { mimeType, data: base64Data },
+      },
+    ])
+  );
 
   const response = result.response;
   const text = response.text();
@@ -74,8 +126,6 @@ export async function generateRecipesWithGeminiImpl(input: {
 }) {
   const genAI = getGeminiClient();
   if (!genAI) return { ok: false as const, reason: "missing_key" as const };
-
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
   const ingredientText = input.ingredients
     .map(i => `${i.displayNameEn} (${i.normalizedName}) - ${i.estimatedAmount}`)
@@ -108,7 +158,7 @@ export async function generateRecipesWithGeminiImpl(input: {
     `The user is currently viewing the app in ${input.locale}.`,
   ].join("\n");
 
-  const result = await model.generateContent(prompt);
+  const result = await runWithGeminiModel(genAI, (model) => model.generateContent(prompt));
   const response = result.response;
   const text = response.text();
   if (!text) throw new Error("Gemini returned empty recipe response");
