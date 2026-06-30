@@ -1,17 +1,20 @@
 import { prisma } from "@/lib/db";
+import { profileIdSchema } from "@/lib/validation/schemas";
 
 export async function ensureProfile(profileId: string) {
+  const id = profileIdSchema.parse(profileId);
+
   await prisma.profile.upsert({
-    where: { id: profileId },
+    where: { id },
     update: {},
-    create: { id: profileId }
+    create: { id }
   });
 
   const settings = await prisma.appSettings.upsert({
-    where: { profileId },
+    where: { profileId: id },
     update: {},
     create: {
-      profileId,
+      profileId: id,
       locale: "en",
       theme: "light",
       defaultWaterTargetMl: 2000
@@ -19,7 +22,7 @@ export async function ensureProfile(profileId: string) {
   });
 
   return {
-    profile: await prisma.profile.findUniqueOrThrow({ where: { id: profileId } }),
+    profile: await prisma.profile.findUniqueOrThrow({ where: { id } }),
     settings
   };
 }
