@@ -83,8 +83,8 @@ npm run lint
 npm run build
 ```
 
-##Fast set up guidance
-[Setup Guide](./Daily Health Setup.txt)
+## Fast set up guidance
+[Setup Guide](./Daily%20Health%20Setup.md)
 
 ## Android APK Packaging
 
