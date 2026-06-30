@@ -35,9 +35,34 @@ export async function parseJson<S extends z.ZodTypeAny>(
   return schema.parse(body);
 }
 
+function isDatabaseConfigurationError(error: unknown) {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+
+  const message = error.message.toLowerCase();
+  return (
+    message.includes("schema.prisma") &&
+    (
+      message.includes("database_url") ||
+      message.includes("datasource") ||
+      message.includes("environment variable not found") ||
+      message.includes("url must start")
+    )
+  );
+}
+
 export function handleRouteError(error: unknown, locale: AppLocale) {
   if (error instanceof ZodError) {
     return jsonError(error.issues.map((issue) => issue.message).join(", "), 400);
+  }
+
+  if (isDatabaseConfigurationError(error)) {
+    console.error(error);
+    return jsonError(
+      "Database is not configured correctly. For this SQLite app, set DATABASE_URL to file:./daily-health.db and regenerate Prisma Client.",
+      503
+    );
   }
 
   console.error(error);
