@@ -3,7 +3,7 @@ name: Expo Android Verify
 on:
   workflow_dispatch:
   push:
-    branches: [expo-migration]
+    branches: [main, expo-migration]
     paths:
       - "apps/mobile/**"
       - "server/**"
@@ -26,22 +26,24 @@ jobs:
     env:
       EXPO_NO_DOCTOR: "1"
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v6
-        with:
-          node-version: "22.13.0"
-
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@v4
         with:
           version: "11.7.0"
 
-      - uses: actions/setup-java@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22.13.0"
+          cache: "pnpm"
+
+      - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: "21"
+          java-version: "17"
 
-      - uses: android-actions/setup-android@v4
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
 
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
@@ -55,12 +57,12 @@ jobs:
             echo "::error::Mobile startup must not use the unavailable synchronous SecureStore API."
             exit 1
           fi
-          if grep -nE 'globalThis\.crypto|randomUUID' apps/mobile/src/auth/status.ts apps/mobile/src/data/LocalAdapter.ts; then
+          if grep -nE 'globalThis\.crypto|randomUUID' apps/mobile/src/auth/statusShared.ts apps/mobile/src/data/LocalAdapter.ts; then
             echo "::error::Mobile IDs must not depend on a platform crypto polyfill."
             exit 1
           fi
           grep -F 'createLocalSelection(localStatus())' apps/mobile/src/state/AppProvider.tsx
-          if grep -F 'useState(() => resolveAdapter' apps/mobile/src/state/AppProvider.tsx; then
+          if grep -F 'useState<AdapterSelection>(() => resolveAdapter' apps/mobile/src/state/AppProvider.tsx; then
             echo "::error::AppProvider must not initialize a platform adapter during its first render."
             exit 1
           fi
@@ -80,7 +82,8 @@ jobs:
 
       - name: Assert the APK has no embedded server stack
         run: |
-          apk="apps/mobile/android/app/build/outputs/apk/debug/app-debug.apk"
+          # Use find to account for potentially split APKs in debug too
+          apk=$(find apps/mobile/android/app/build/outputs/apk/debug -name "*.apk" | head -n 1)
           test -f "$apk"
           if unzip -l "$apk" | grep -E -i 'capacitor|nodejs|libnode\.so|query_engine|prisma'; then
             echo "::error::Expo APK still contains an embedded Node/Capacitor/Prisma artifact."
