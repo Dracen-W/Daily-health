@@ -11,6 +11,10 @@ on:
         description: Optional release title
         required: false
         type: string
+      api_url:
+        description: "API URL for the APK (e.g. https://api.yourdomain.com)"
+        required: false
+        type: string
       prerelease:
         description: Mark the GitHub Release as a pre-release
         required: true
@@ -27,6 +31,7 @@ jobs:
     env:
       RELEASE_TAG: ${{ inputs.tag_name }}
       RELEASE_NAME: ${{ inputs.release_name != '' && inputs.release_name || inputs.tag_name }}
+      EXPO_PUBLIC_API_BASE_URL: ${{ inputs.api_url != '' && inputs.api_url || vars.DAILY_HEALTH_API_URL }}
     steps:
       - uses: actions/checkout@v4
 
