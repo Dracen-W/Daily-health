@@ -1,0 +1,15 @@
+{
+  "name": "daily-health",
+  "version": "2.0.0",
+  "private": true,
+  "license": "MIT",
+  "packageManager": "pnpm@11.7.0",
+  "scripts": {
+    "mobile": "pnpm --filter @daily-health/mobile start",
+    "mobile:typecheck": "pnpm --filter @daily-health/mobile typecheck",
+    "mobile:web": "pnpm --filter @daily-health/mobile export:web",
+    "mobile:prebuild": "pnpm --filter @daily-health/mobile prebuild:android",
+    "server": "pnpm --filter @daily-health/server dev",
+    "server:typecheck": "pnpm --filter @daily-health/server typecheck"
+  }
+}

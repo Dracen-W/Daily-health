@@ -1,0 +1,88 @@
+name: Expo Android Verify
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [expo-migration]
+    paths:
+      - "apps/mobile/**"
+      - "server/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - ".github/workflows/expo-android-verify.yml"
+  pull_request:
+    paths:
+      - "apps/mobile/**"
+      - "server/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - ".github/workflows/expo-android-verify.yml"
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    env:
+      EXPO_NO_DOCTOR: "1"
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22.13.0"
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: "11.7.0"
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - uses: android-actions/setup-android@v4
+
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Check Expo dependency compatibility
+        run: pnpm --filter @daily-health/mobile exec expo install --check
+
+      - name: Assert safe mobile startup source
+        run: |
+          if grep -R -nE 'SecureStore\.getItem\(' apps/mobile; then
+            echo "::error::Mobile startup must not use the unavailable synchronous SecureStore API."
+            exit 1
+          fi
+          if grep -nE 'globalThis\.crypto|randomUUID' apps/mobile/src/auth/status.ts apps/mobile/src/data/LocalAdapter.ts; then
+            echo "::error::Mobile IDs must not depend on a platform crypto polyfill."
+            exit 1
+          fi
+          grep -F 'createLocalSelection(localStatus())' apps/mobile/src/state/AppProvider.tsx
+          if grep -F 'useState(() => resolveAdapter' apps/mobile/src/state/AppProvider.tsx; then
+            echo "::error::AppProvider must not initialize a platform adapter during its first render."
+            exit 1
+          fi
+
+      - name: Type-check and bundle web/native JavaScript
+        run: |
+          pnpm --filter @daily-health/mobile typecheck
+          pnpm --filter @daily-health/server typecheck
+          pnpm --filter @daily-health/mobile export:web
+          pnpm --filter @daily-health/mobile exec expo export --platform android
+
+      - name: Generate and build Expo Android app
+        run: |
+          pnpm --filter @daily-health/mobile prebuild:android
+          cd apps/mobile/android
+          ./gradlew assembleDebug
+
+      - name: Assert the APK has no embedded server stack
+        run: |
+          apk="apps/mobile/android/app/build/outputs/apk/debug/app-debug.apk"
+          test -f "$apk"
+          if unzip -l "$apk" | grep -E -i 'capacitor|nodejs|libnode\.so|query_engine|prisma'; then
+            echo "::error::Expo APK still contains an embedded Node/Capacitor/Prisma artifact."
+            exit 1
+          fi
