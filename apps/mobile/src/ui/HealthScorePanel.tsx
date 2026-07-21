@@ -3,7 +3,7 @@ import { View, Text } from "react-native";
 import type { HealthScoreView } from "../../../../lib/services/healthScore";
 import { colors, shared } from "./styles";
 
-export function HealthScorePanel({ healthScore, t }: { healthScore: HealthScoreView; t: (k: string) => string }) {
+export function HealthScorePanel({ healthScore, t }: { healthScore: HealthScoreView; t: (k: any) => string }) {
   const scoreColor =
     healthScore.score >= 85 ? "#059669" :
     healthScore.score >= 70 ? colors.leaf :
@@ -20,10 +20,10 @@ export function HealthScorePanel({ healthScore, t }: { healthScore: HealthScoreV
           <Text style={shared.helper}>{t("dashboard.scoreOutOf100")}</Text>
         </View>
         <View style={{ flex: 1, marginLeft: 24 }}>
-          <Text style={{ fontSize: 16, fontWeight: "600", color: colors.text }}>{t(healthScore.statusKey)}</Text>
+          <Text style={{ fontSize: 16, fontWeight: "600", color: colors.text }}>{t(healthScore.statusKey as any)}</Text>
           <View style={{ marginTop: 8, gap: 4 }}>
             {healthScore.adviceKeys.map((key: string, idx: number) => (
-              <Text key={idx} style={{ fontSize: 12, color: "#64748B" }}>• {t(key)}</Text>
+              <Text key={idx} style={{ fontSize: 12, color: "#64748B" }}>• {t(key as any)}</Text>
             ))}
           </View>
         </View>
@@ -33,7 +33,7 @@ export function HealthScorePanel({ healthScore, t }: { healthScore: HealthScoreV
         {healthScore.metrics.map((metric: any) => (
           <View key={metric.key}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 4 }}>
-              <Text style={{ fontSize: 13, color: colors.text }}>{t(metric.labelKey)}</Text>
+              <Text style={{ fontSize: 13, color: colors.text }}>{t(metric.labelKey as any)}</Text>
               <Text style={{ fontSize: 12, color: "#64748B" }}>{metric.value}</Text>
             </View>
             <View style={{ height: 6, backgroundColor: "#E2E8F0", borderRadius: 3, overflow: "hidden" }}>
