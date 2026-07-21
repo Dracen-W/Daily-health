@@ -16,8 +16,12 @@ import type {
   WaterSummary,
   WeightLogView,
   NutritionSummaryView,
-  FoodNutritionEstimate
+  FoodNutritionEstimate,
+  ServiceStatusItem,
+  ServiceStatusResponse
 } from "../domain";
+
+export type { ServiceStatusItem, ServiceStatusResponse };
 
 export type ProfileInput = {
   displayName?: string | null;
@@ -51,23 +55,6 @@ export type AiSettingsInput = {
   provider: AiProvider;
   apiKey?: string;
   clearApiKey?: boolean;
-};
-
-export type ServiceStatusItem = {
-  id: string;
-  state: "ok" | "warning" | "error";
-  titleEn: string;
-  titleZh: string;
-  summaryEn: string;
-  summaryZh: string;
-  detailsEn: string[];
-  detailsZh: string[];
-};
-
-export type ServiceStatusResponse = {
-  overall: "ok" | "warning" | "error";
-  checkedAt: string;
-  items: ServiceStatusItem[];
 };
 
 export type ImageInput = {

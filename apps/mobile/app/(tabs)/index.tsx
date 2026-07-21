@@ -92,12 +92,12 @@ export default function HomeScreen() {
           <Text style={shared.subtitle}>{profile?.displayName ? `${t("dashboard.subtitle")} · ${profile.displayName}` : t("dashboard.subtitle")}</Text>
         </View>
 
-        {healthScore ? <HealthScorePanel healthScore={healthScore} t={t} /> : null}
+        {healthScore ? <HealthScorePanel healthScore={healthScore} t={t as any} /> : null}
 
         <View style={shared.panel}>
           <Text style={shared.sectionTitle}>{t("dashboard.healthTrend")}</Text>
           <View style={{ marginTop: 12 }}>
-            <HealthTrendChart points={healthTrendPoints} t={t} />
+            <HealthTrendChart points={healthTrendPoints} t={t as any} />
           </View>
         </View>
 

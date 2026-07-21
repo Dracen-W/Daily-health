@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import type { AppErrorLogView, ServiceStatusItem, ServiceStatusResponse } from "../../src/domain";
+import type { AppErrorLogView } from "../../src/domain";
 import { useApp } from "../../src/state/AppProvider";
 import { colors, shared } from "../../src/ui/styles";
 import { EmptyState } from "../../src/ui/EmptyState";
 
-function StatusBadge({ state, t }: { state: ServiceStatusItem["state"]; t: (k: string) => string }) {
+function StatusBadge({ state, t }: { state: ServiceStatusItem["state"]; t: (k: any) => string }) {
   const color = state === "ok" ? "#059669" : state === "warning" ? "#D97706" : "#E11D48";
   const bg = state === "ok" ? "#ECFDF5" : state === "warning" ? "#FFFBEB" : "#FFF1F2";
   return (
@@ -16,7 +16,7 @@ function StatusBadge({ state, t }: { state: ServiceStatusItem["state"]; t: (k: s
   );
 }
 
-function ErrorLogCard({ log, locale, t }: { log: AppErrorLogView; locale: string; t: (k: string) => string }) {
+function ErrorLogCard({ log, locale, t }: { log: AppErrorLogView; locale: string; t: (k: any) => string }) {
   const date = new Date(log.createdAt).toLocaleString(locale);
   const color = log.severity === "error" ? "#E11D48" : log.severity === "warning" ? "#D97706" : "#0EA5E9";
   const bg = log.severity === "error" ? "#FFF1F2" : log.severity === "warning" ? "#FFFBEB" : "#F0F9FF";
@@ -37,7 +37,7 @@ function ErrorLogCard({ log, locale, t }: { log: AppErrorLogView; locale: string
 
 export default function StatusScreen() {
   const { adapter, authStatus, locale, t } = useApp();
-  const [status, setStatus] = useState<ServiceStatusResponse | null>(null);
+  const [status, setStatus] = useState<any>(null);
   const [errorLogs, setErrorLogs] = useState<AppErrorLogView[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<string | null>(null);
@@ -50,7 +50,7 @@ export default function StatusScreen() {
         adapter.getServiceStatus(),
         adapter.getErrorLogs(8).catch(() => [])
       ]);
-      setStatus(statusRes);
+      setStatus(statusRes as any);
       setErrorLogs(logs);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : t("common.error"));
@@ -75,7 +75,7 @@ export default function StatusScreen() {
           <View>
             <Text style={shared.sectionTitle}>{t("status.overall")}</Text>
             <View style={{ marginTop: 8 }}>
-              {status ? <StatusBadge state={status.overall} t={t} /> : <Text style={shared.helper}>{t("common.loading")}</Text>}
+              {status ? <StatusBadge state={status.overall} t={t as any} /> : <Text style={shared.helper}>{t("common.loading")}</Text>}
             </View>
           </View>
           <Pressable onPress={() => void load()} disabled={loading} style={[shared.secondaryButton, { paddingVertical: 8 }]}>
@@ -83,17 +83,17 @@ export default function StatusScreen() {
           </Pressable>
         </View>
 
-        {status?.items.map((item: ServiceStatusItem) => (
+        {status?.items?.map((item: any) => (
           <View key={item.id} style={shared.panel}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
               <View style={{ flex: 1 }}>
                 <Text style={shared.sectionTitle}>{locale === "zh-CN" ? item.titleZh : item.titleEn}</Text>
                 <Text style={[shared.helper, { marginTop: 4 }]}>{locale === "zh-CN" ? item.summaryZh : item.summaryEn}</Text>
               </View>
-              <StatusBadge state={item.state} t={t} />
+              <StatusBadge state={item.state} t={t as any} />
             </View>
             <View style={{ marginTop: 12, gap: 4 }}>
-              {(locale === "zh-CN" ? item.detailsZh : item.detailsEn).map((detail: string, idx: number) => (
+              {((locale === "zh-CN" ? item.detailsZh : item.detailsEn) || []).map((detail: string, idx: number) => (
                 <Text key={idx} style={{ fontSize: 13, color: "#64748B" }}>• {detail}</Text>
               ))}
             </View>
@@ -106,7 +106,7 @@ export default function StatusScreen() {
           <View style={{ marginTop: 8 }}>
             {errorLogs.length > 0 ? (
               errorLogs.map((log) => (
-                <ErrorLogCard key={log.id} log={log} locale={locale} t={t} />
+                <ErrorLogCard key={log.id} log={log} locale={locale} t={t as any} />
               ))
             ) : (
               <EmptyState message={t("status.noRecentErrors")} />
