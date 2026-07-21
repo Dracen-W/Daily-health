@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import type { AppErrorLogView } from "../../src/domain";
+import type { AppErrorLogView, ServiceStatusItem } from "../../src/domain";
 import { useApp } from "../../src/state/AppProvider";
 import { colors, shared } from "../../src/ui/styles";
 import { EmptyState } from "../../src/ui/EmptyState";
