@@ -1,6 +1,6 @@
 import { router } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, Text, View, StyleSheet } from "react-native";
+import { ActivityIndicator, Pressable, ScrollView, Text, View, StyleSheet, Platform } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { calculateHealthScore } from "../../../../lib/services/healthScore";
 import type { DailyHistoryView, UserProfileView } from "../../src/domain";
