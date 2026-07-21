@@ -20,3 +20,4 @@ server/*.db-shm
 .codex/
 work/
 outputs/
+*.apk
