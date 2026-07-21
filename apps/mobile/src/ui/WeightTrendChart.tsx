@@ -37,7 +37,7 @@ const styles = StyleSheet.create({
   container: {
     height: 160,
     flexDirection: "row",
-    alignItems: "end",
+    alignItems: "flex-end",
     gap: 8,
     backgroundColor: "#F8FAFC", // slate-50 equivalent
     padding: 12,

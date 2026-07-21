@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View, Platform } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { IngredientScanView, RecipePreferenceInput, RecipeView } from "../../src/domain";
 import { useApp } from "../../src/state/AppProvider";

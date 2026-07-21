@@ -15,5 +15,12 @@ export type {
   UserProfileView,
   WaterSummary,
   WeightLogView,
-  SleepLogView
+  SleepLogView,
+  NutritionSummaryView,
+  AppErrorLogView,
+  ServiceStatusItem,
+  ServiceStatusResponse,
+  FoodNutritionEstimate,
+  MealCategory,
+  SleepQuality
 } from "../../../lib/types/domain";

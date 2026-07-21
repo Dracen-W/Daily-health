@@ -6,17 +6,17 @@ import { useApp } from "../../src/state/AppProvider";
 import { colors, shared } from "../../src/ui/styles";
 import { EmptyState } from "../../src/ui/EmptyState";
 
-function StatusBadge({ state, t }: { state: ServiceStatusItem["state"]; t: (k: any) => string }) {
+function StatusBadge({ state, t }: { state: ServiceStatusItem["state"]; t: (k: string) => string }) {
   const color = state === "ok" ? "#059669" : state === "warning" ? "#D97706" : "#E11D48";
   const bg = state === "ok" ? "#ECFDF5" : state === "warning" ? "#FFFBEB" : "#FFF1F2";
   return (
     <View style={{ backgroundColor: bg, borderColor: color, borderWidth: 1, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4 }}>
-      <Text style={{ color, fontSize: 12, fontWeight: "700" }}>{t(`status.${state}`)}</Text>
+      <Text style={{ color, fontSize: 12, fontWeight: "700" }}>{t(`status.${state}` as any)}</Text>
     </View>
   );
 }
 
-function ErrorLogCard({ log, locale, t }: { log: AppErrorLogView; locale: string; t: (k: any) => string }) {
+function ErrorLogCard({ log, locale, t }: { log: AppErrorLogView; locale: string; t: (k: string) => string }) {
   const date = new Date(log.createdAt).toLocaleString(locale);
   const color = log.severity === "error" ? "#E11D48" : log.severity === "warning" ? "#D97706" : "#0EA5E9";
   const bg = log.severity === "error" ? "#FFF1F2" : log.severity === "warning" ? "#FFFBEB" : "#F0F9FF";
@@ -83,7 +83,7 @@ export default function StatusScreen() {
           </Pressable>
         </View>
 
-        {status?.items.map((item) => (
+        {status?.items.map((item: ServiceStatusItem) => (
           <View key={item.id} style={shared.panel}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
               <View style={{ flex: 1 }}>
@@ -93,7 +93,7 @@ export default function StatusScreen() {
               <StatusBadge state={item.state} t={t} />
             </View>
             <View style={{ marginTop: 12, gap: 4 }}>
-              {(locale === "zh-CN" ? item.detailsZh : item.detailsEn).map((detail, idx) => (
+              {(locale === "zh-CN" ? item.detailsZh : item.detailsEn).map((detail: string, idx: number) => (
                 <Text key={idx} style={{ fontSize: 13, color: "#64748B" }}>• {detail}</Text>
               ))}
             </View>

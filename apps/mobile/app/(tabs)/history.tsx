@@ -89,7 +89,7 @@ export default function HistoryScreen() {
               {history.foodLogs.length > 0 ? history.foodLogs.map((log) => (
                 <View key={log.id} style={{ backgroundColor: "#F8FAFC", padding: 12, borderRadius: 8, marginTop: 8 }}>
                   <Text style={{ fontSize: 14, color: colors.text }}>
-                    {t(mealCategoryKey(log.mealCategory))}: {ingredientName({ nameEn: log.nameEn, nameZh: log.nameZh }, locale)} · {log.calories ?? 0} kcal
+                    {t(mealCategoryKey(log.mealCategory) as any)}: {ingredientName({ nameEn: log.nameEn, nameZh: log.nameZh }, locale)} · {log.calories ?? 0} kcal
                   </Text>
                 </View>
               )) : <EmptyState message={t("common.empty")} />}

@@ -14,7 +14,9 @@ import type {
   ThemeMode,
   UserProfileView,
   WaterSummary,
-  WeightLogView
+  WeightLogView,
+  NutritionSummaryView,
+  FoodNutritionEstimate
 } from "../domain";
 
 export type ProfileInput = {

@@ -11,13 +11,14 @@ import type {
   WeightLogView
 } from "../domain";
 import { LocalAdapter } from "./LocalAdapter";
-import type {
-  AiSettings,
-  AiSettingsInput,
-  DataAdapter,
-  IngredientScanInput,
-  ProfileInput,
-  Settings
+import {
+  type AiSettings,
+  type AiSettingsInput,
+  type DataAdapter,
+  DataAdapterError,
+  type IngredientScanInput,
+  type ProfileInput,
+  type Settings
 } from "./DataAdapter";
 
 /**

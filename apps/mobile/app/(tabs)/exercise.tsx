@@ -80,7 +80,7 @@ export default function ExerciseScreen() {
   }
 
   async function remove(id: string) {
-    Alert.alert(t("common.delete"), t("common.confirmDelete"), [
+    Alert.alert(t("common.delete"), t("common.confirmDelete" as any), [
       { text: t("common.cancel"), style: "cancel" },
       {
         text: t("common.delete"),

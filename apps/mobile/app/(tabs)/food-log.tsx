@@ -165,7 +165,7 @@ export default function FoodLogScreen() {
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
                 {categories.map((item) => (
                   <Pressable key={item} onPress={() => setCategory(item)} style={[shared.secondaryButton, category === item && { backgroundColor: colors.mint, borderColor: colors.leaf }]}>
-                    <Text style={[shared.secondaryButtonText, category === item && { fontWeight: "700" }]}>{t(`food.${item}`)}</Text>
+                    <Text style={[shared.secondaryButtonText, category === item && { fontWeight: "700" }]}>{t(`food.${item}` as any)}</Text>
                   </Pressable>
                 ))}
               </View>
@@ -236,7 +236,7 @@ export default function FoodLogScreen() {
               if (mealLogs.length === 0) return null;
               return (
                 <View key={item} style={{ marginBottom: 16 }}>
-                  <Text style={{ color: colors.text, fontWeight: "700", textTransform: "capitalize", marginBottom: 8 }}>{t(`food.${item}`)}</Text>
+                  <Text style={{ color: colors.text, fontWeight: "700", textTransform: "capitalize", marginBottom: 8 }}>{t(`food.${item}` as any)}</Text>
                   {mealLogs.map((log) => (
                     <View key={log.id} style={{ borderTopColor: colors.line, borderTopWidth: 1, paddingTop: 8, paddingBottom: 8, gap: 4 }}>
                       <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
