@@ -1,3 +1,5 @@
+import { Platform } from "react-native";
+
 export type CachedAuthStatus = {
   version: 1;
   subscribed: boolean;
@@ -19,13 +21,17 @@ export function createProfileId() {
 export function localStatus(profileId = createProfileId()): CachedAuthStatus {
   // In development, the web version behaves like a signed-in subscriber
   // to bypass the login screen and enable immediate server interaction.
-  const isDevWeb = typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
+  const isDevWeb =
+    Platform.OS === "web" &&
+    typeof window !== "undefined" &&
+    window.location &&
+    (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
 
   return {
     version: 1,
-    subscribed: isDevWeb,
+    subscribed: !!isDevWeb,
     localMirror: false,
-    testMode: isDevWeb,
+    testMode: !!isDevWeb,
     profileId: isDevWeb ? "dev-user-id" : profileId,
     accessToken: isDevWeb ? "dev-token-bypass" : null
   };
